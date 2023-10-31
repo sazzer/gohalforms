@@ -4,8 +4,9 @@ import "encoding/json"
 
 // Resource represents a generic representation of a HAL (Hypertext Application Language) resource.
 type Resource struct {
-	payload any
-	links   linkset
+	payload  any
+	links    linkset
+	embedded resourceset
 }
 
 // New creates a new instance of the Resource type with the provided payload.
@@ -28,8 +29,9 @@ type Resource struct {
 //	halResource := gohalforms.New(payload)
 func NewResource(payload any) Resource {
 	return Resource{
-		payload: payload,
-		links:   linkset{},
+		payload:  payload,
+		links:    linkset{},
+		embedded: resourceset{},
 	}
 }
 
@@ -60,6 +62,10 @@ func (resource *Resource) AddLink(rel string, value Link) {
 	resource.links[rel] = append(resource.links[rel], value)
 }
 
+func (resource *Resource) AddEmbedded(rel string, value Resource) {
+	resource.embedded[rel] = append(resource.embedded[rel], value)
+}
+
 func (resource Resource) MarshalJSON() ([]byte, error) {
 	intermediate := map[string]any{}
 
@@ -78,6 +84,10 @@ func (resource Resource) MarshalJSON() ([]byte, error) {
 
 	if len(resource.links) > 0 {
 		intermediate["_links"] = resource.links
+	}
+
+	if len(resource.embedded) > 0 {
+		intermediate["_embedded"] = resource.embedded
 	}
 
 	// Re-marshal this to JSON.
