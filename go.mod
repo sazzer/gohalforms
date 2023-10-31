@@ -1,6 +1,6 @@
 module github.com/sazzer/gohalforms
 
-go 1.21.2
+go 1.21
 
 require (
 	github.com/kinbiko/jsonassert v1.1.1
