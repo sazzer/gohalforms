@@ -2,6 +2,7 @@ package gohalforms_test
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/kinbiko/jsonassert"
@@ -223,5 +224,132 @@ func TestMarshalTwoEmbeddedSameRel(t *testing.T) {
 			}]
 		},
 		"hello":  "World!"
+	}`)
+}
+
+func TestMarshalSimpleTemplate(t *testing.T) {
+	t.Parallel()
+
+	resource := gohalforms.NewResource(nil)
+	resource.AddTemplate("default", gohalforms.Template{
+		Title:       "Create",
+		Method:      http.MethodPost,
+		ContentType: "application/json",
+		Properties: []gohalforms.Property{
+			{
+				Name:     "title",
+				Required: true,
+				Prompt:   "Title",
+			},
+			{
+				Name:   "completed",
+				Value:  "false",
+				Prompt: "Completed",
+			},
+		},
+	})
+
+	encoded, err := json.Marshal(resource)
+	assert.NoError(t, err)
+
+	ja := jsonassert.New(t)
+	ja.Assertf(string(encoded), `{
+		"_templates" : {
+			"default" : {
+				"title" : "Create",
+				"method" : "POST",
+				"contentType" : "application/json",
+				"properties" : [
+					{"name" : "title", "required" : true, "prompt" : "Title"},
+					{"name" : "completed", "value" : "false", "prompt" : "Completed"}
+				]
+			}
+		}
+	}`)
+}
+
+func TestMarshalLinkOptions(t *testing.T) {
+	t.Parallel()
+
+	resource := gohalforms.NewResource(nil)
+	resource.AddTemplate("default", gohalforms.Template{
+		Properties: []gohalforms.Property{
+			{
+				Name: "options",
+				Options: gohalforms.LinkOption{
+					Link:           gohalforms.Link{Href: "/options"},
+					MaxItems:       3,
+					SelectedValues: []string{"a", "b", "c"},
+				},
+			},
+		},
+	})
+
+	encoded, err := json.Marshal(resource)
+	assert.NoError(t, err)
+
+	ja := jsonassert.New(t)
+	ja.Assertf(string(encoded), `{
+		"_templates" : {
+			"default" : {
+				"properties" : [
+					{
+						"name" : "options",
+						"options": {
+							"link": {"href": "/options"},
+							"maxItems": 3,
+							"selectedValues": ["a", "b", "c"]
+						}
+					}
+				]
+			}
+		}
+	}`)
+}
+
+func TestMarshalInlineOptions(t *testing.T) {
+	t.Parallel()
+
+	resource := gohalforms.NewResource(nil)
+	resource.AddTemplate("default", gohalforms.Template{
+		Properties: []gohalforms.Property{
+			{
+				Name: "options",
+				Options: gohalforms.InlineOption{
+					Inline: []gohalforms.InlineOptionValue{
+						{Prompt: "First", Value: "1"},
+						{Prompt: "Second", Value: "2"},
+						{Prompt: "Third", Value: "3"},
+					},
+					MaxItems:       3,
+					SelectedValues: []string{"1", "2", "3"},
+				},
+			},
+		},
+	})
+
+	encoded, err := json.Marshal(resource)
+	assert.NoError(t, err)
+
+	ja := jsonassert.New(t)
+	ja.Assertf(string(encoded), `{
+		"_templates" : {
+			"default" : {
+				"properties" : [
+					{
+						"name" : "options",
+						"options": {
+							"inline": [
+								{"prompt": "First", "value": "1"},
+								{"prompt": "Second", "value": "2"},
+								{"prompt": "Third", "value": "3"}
+							],
+							"maxItems": 3,
+							"selectedValues": ["1", "2", "3"]
+						}
+					}
+				]
+			}
+		}
 	}`)
 }
